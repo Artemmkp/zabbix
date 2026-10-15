@@ -1,7 +1,7 @@
 zabbix_export:
   version: '7.0'
   template_groups:
-    - uuid: '8824f57964e745a9a6034b00132a8ab3'
+    - uuid: '36bff6c29af64692839d077febfc7079'
       name: Templates/Network devices
   templates:
     - uuid: 'b5d5503a922446da90e66642b031291a'
@@ -594,7 +594,7 @@ zabbix_export:
               - macro: '{#DDM.TEMP}'
                 value: '[0-9]'
                 formulaid: A
-          description: 'NAG-MIB::ddmTranscDiagnosisTable. Only ports with an inserted transceiver that reports DDM ("NULL" = empty slot or no DDM). Index is 5001+ (not ifIndex), port name is taken from ddmTransSerialName.'
+          description: 'NAG-MIB::ddmTranscDiagnosisTable. Only ports with an inserted transceiver that reports DDM ("NULL" = empty slot or no DDM). Index = ifIndex (5001+ on this platform), port name is taken from ddmTransSerialName.'
           item_prototypes:
             - uuid: 'a31ebcff25884e97adcc13d40126fe89'
               name: 'SFP {#PORTNAME}: Port admin status'
@@ -943,6 +943,8 @@ zabbix_export:
                   value: availability
             - uuid: '0517f147518940b292a16592d470770a'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])-3'
               name: 'SFP {#PORTNAME}: temperature is above high alarm threshold'
               opdata: 'Temp: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
               priority: WARNING
@@ -1106,10 +1108,11 @@ zabbix_export:
         - tag: scope
           value: availability
     - uuid: '802f5808195545b59dc112d2a237ade4'
-      expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.level)<{$UPS.BATTERY.LEVEL.MIN} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)<>5'
+      expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.level)<{$UPS.BATTERY.LEVEL.MIN} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=2'
       name: 'UPS battery level is low (<{$UPS.BATTERY.LEVEL.MIN}%)'
       opdata: 'Level: {ITEM.LASTVALUE1}, status: {ITEM.LASTVALUE2}'
       priority: HIGH
+      description: 'Fires only while the switch is running on battery (priBatteryStatus=2, discharging), so a low level during recharge after an outage does not alert.'
       tags:
         - tag: scope
           value: availability
