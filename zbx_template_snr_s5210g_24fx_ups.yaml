@@ -1,0 +1,1115 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: '8824f57964e745a9a6034b00132a8ab3'
+      name: Templates/Network devices
+  templates:
+    - uuid: 'b5d5503a922446da90e66642b031291a'
+      template: 'SNR-S5210G-24FX-UPS by SNMP'
+      name: 'SNR-S5210G-24FX-UPS by SNMP'
+      description: |
+        Switch SNR-S5210G-24FX-UPS (SNR-S5xxx series, eNOS).
+        Based on NAG-MIB (SNR-S5XXX_NAG_private_1.0.18.mib), enterprise 1.3.6.1.4.1.40418.7.100,
+        plus standard SNMPv2-MIB / IF-MIB.
+        Monitors: availability, CPU, memory, temperature, fans, AC/secondary power,
+        built-in UPS battery, interfaces (traffic/errors/link), SFP DDM (temperature, voltage, bias, TX/RX power).
+      vendor:
+        name: SNR
+        version: 7.0-0
+      groups:
+        - name: Templates/Network devices
+      items:
+        - uuid: '2386a19ff33040a1ba7b46d3729d7550'
+          name: 'ICMP ping'
+          type: SIMPLE
+          key: icmpping
+          history: 7d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: 'efaf79c2ff5c49d394aef115229e5689'
+              expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/icmpping,#3)=0'
+              name: 'Unavailable by ICMP ping'
+              priority: HIGH
+              description: 'Last three attempts returned timeout.'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: '710dbf0116c649759b271f2a4d36ab74'
+          name: 'SNMP agent availability'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 7d
+          valuemap:
+            name: 'zabbix.host.available'
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: '7fa33ee5123c42b1bc5889ae651c5855'
+              expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
+              name: 'No SNMP data collection'
+              priority: WARNING
+              description: 'SNMP is not available for polling. Check community/credentials and ACL on the switch.'
+              dependencies:
+                - name: 'Unavailable by ICMP ping'
+                  expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/icmpping,#3)=0'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 'bb8c2f097d0f4fa18063cade5605491d'
+          name: 'System name'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.5.0
+          key: 'system.name'
+          delay: 1h
+          history: 14d
+          value_type: CHAR
+          inventory_link: NAME
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+        - uuid: 'eb7a38210a344b21aebb39e80ecbb4ea'
+          name: 'System description'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.1.0
+          key: 'system.descr'
+          delay: 1h
+          history: 14d
+          value_type: TEXT
+          inventory_link: OS
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: '4199c659c38f4635ab23c27b1985c52b'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/system.descr,#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/system.descr,#2) and length(last(/SNR-S5210G-24FX-UPS by SNMP/system.descr))>0'
+              name: 'Firmware has changed'
+              priority: INFO
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+        - uuid: 'fa2c2e2f687745858a786f71ab063525'
+          name: 'System location'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.6.0
+          key: 'system.location'
+          delay: 1h
+          history: 14d
+          value_type: CHAR
+          inventory_link: LOCATION
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+        - uuid: 'c67a5ef7b6144852aefe824f6f8124e6'
+          name: 'Uptime'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.3.0
+          key: 'system.uptime'
+          value_type: FLOAT
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: 'ae9636828d5a4c5e91ccce807bf12b42'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/system.uptime)<10m'
+              name: 'Device has been restarted (uptime < 10m)'
+              priority: WARNING
+              manual_close: 'YES'
+              dependencies:
+                - name: 'No SNMP data collection'
+                  expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
+              tags:
+                - tag: scope
+                  value: notice
+        - uuid: '46f6c78b24cf4680bc8e82174cbe5574'
+          name: 'Hardware model'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.200.0
+          key: 'snr.model'
+          delay: 1h
+          history: 14d
+          value_type: CHAR
+          inventory_link: MODEL
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+        - uuid: '9f29bd14a9e64471b89eac941d62b6da'
+          name: 'CPU utilization'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.11.10.0
+          key: 'snr.cpu.util'
+          value_type: FLOAT
+          units: '%'
+          description: 'NAG-MIB::switchCpuUsage'
+          tags:
+            - tag: component
+              value: cpu
+          triggers:
+            - uuid: 'ddc97972d2644d579dd15c5814014438'
+              expression: 'min(/SNR-S5210G-24FX-UPS by SNMP/snr.cpu.util,5m)>{$CPU.UTIL.CRIT}'
+              name: 'High CPU utilization (over {$CPU.UTIL.CRIT}% for 5m)'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: performance
+        - uuid: 'ef3b8949889e4f639974bb9d9f9280e5'
+          name: 'Memory utilization'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.11.11.0
+          key: 'snr.memory.util'
+          value_type: FLOAT
+          units: '%'
+          description: 'NAG-MIB::switchMemoryUsage'
+          tags:
+            - tag: component
+              value: memory
+          triggers:
+            - uuid: '677a50bed41d4bbaa5871302a59e42e9'
+              expression: 'min(/SNR-S5210G-24FX-UPS by SNMP/snr.memory.util,5m)>{$MEMORY.UTIL.MAX}'
+              name: 'High memory utilization (over {$MEMORY.UTIL.MAX}% for 5m)'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: capacity
+        - uuid: '20408d07d70043a5aef65532d1893c1e'
+          name: 'Temperature'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.11.9.0
+          key: 'snr.temperature'
+          value_type: FLOAT
+          units: '°C'
+          description: 'NAG-MIB::switchTemperature'
+          tags:
+            - tag: component
+              value: environment
+          triggers:
+            - uuid: 'eb39d3f55bbb4c8295a22d76147b10af'
+              expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)>{$TEMP.CRIT}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)<{$TEMP.CRIT}-3'
+              name: 'Temperature is above critical threshold (>{$TEMP.CRIT}°C)'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: HIGH
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: '97e765fe26c247e19b34e3f9da7d94e8'
+              expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)>{$TEMP.WARN}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)<{$TEMP.WARN}-3'
+              name: 'Temperature is above warning threshold (>{$TEMP.WARN}°C)'
+              opdata: 'Current: {ITEM.LASTVALUE1}'
+              priority: WARNING
+              dependencies:
+                - name: 'Temperature is above critical threshold (>{$TEMP.CRIT}°C)'
+                  expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)>{$TEMP.CRIT}'
+                  recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)<{$TEMP.CRIT}-3'
+              tags:
+                - tag: scope
+                  value: performance
+        - uuid: '8f4640b5854a45eb9a1390f3c5542f20'
+          name: 'AC power status'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.23.2.0
+          key: 'snr.power.ac'
+          delay: 30s
+          description: 'NAG-MIB::priACPowerStatus'
+          valuemap:
+            name: 'NAG-MIB::priACPowerStatus'
+          tags:
+            - tag: component
+              value: power
+        - uuid: '4256f6c22ad54d18b7a45a5349be65bb'
+          name: 'Secondary power status'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.23.6.0
+          key: 'snr.power.secondary'
+          description: 'NAG-MIB::priSecPowerStatus'
+          valuemap:
+            name: 'NAG-MIB::priSecPowerStatus'
+          tags:
+            - tag: component
+              value: power
+          triggers:
+            - uuid: '40254741912843e89587f12b541a3e79'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.power.secondary)=2'
+              name: 'Secondary power supply is abnormal'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: '19ef4b9a3e414eda820999006e99c8f6'
+          name: 'Battery status'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.23.3.0
+          key: 'snr.battery.status'
+          delay: 30s
+          description: 'NAG-MIB::priBatteryStatus'
+          valuemap:
+            name: 'NAG-MIB::priBatteryStatus'
+          tags:
+            - tag: component
+              value: ups
+          triggers:
+            - uuid: '99a4877116254ec6a0bca6c554cf097c'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=6'
+              name: 'UPS battery failure'
+              priority: HIGH
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: 'edd3a48747eb487c88231abeb7bf60b2'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=5'
+              name: 'UPS battery is not connected'
+              priority: HIGH
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: '90cd61e3f9714af787e55a9bc83f0302'
+          name: 'Battery voltage'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.23.4.0
+          key: 'snr.battery.voltage'
+          value_type: FLOAT
+          units: V
+          description: 'NAG-MIB::priBatteryVoltage (value x10)'
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          tags:
+            - tag: component
+              value: ups
+        - uuid: 'c0059b0f23ea4c179bbcfd997a149ccc'
+          name: 'Battery level'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.23.5.0
+          key: 'snr.battery.level'
+          delay: 30s
+          units: '%'
+          description: 'NAG-MIB::priBatteryLevel'
+          tags:
+            - tag: component
+              value: ups
+        - uuid: 'd275eff1c65f4b8fa1f528fdd6ff9457'
+          name: 'SFP DDM: Get table'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.40418.7.100.30.1.1,1.3.6.1.4.1.40418.7.100.30.3.1,1.3.6.1.2.1.2.2.1.7]'
+          key: snr.ddm.walk
+          delay: 5m
+          history: '0'
+          value_type: TEXT
+          description: 'Master item: NAG-MIB::ddmTranscDiagnosisTable + ddmTranscBasicInfoTable + IF-MIB::ifAdminStatus (DDM index = ifIndex).'
+          tags:
+            - tag: component
+              value: raw
+      discovery_rules:
+        - uuid: 'b70a3e50168c4c5ca568d55a1954ddad'
+          name: 'Fan discovery'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.40418.7.100.1.12.1.3]'
+          key: 'snr.fan.discovery'
+          delay: 1h
+          description: 'NAG-MIB::sysFanTable. Empty on fanless models.'
+          item_prototypes:
+            - uuid: '881be3b67a03493996547de13f60e10c'
+              name: 'Fan {#SNMPINDEX}: Status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.40418.7.100.1.12.1.3.{#SNMPINDEX}'
+              key: 'snr.fan.status[{#SNMPINDEX}]'
+              valuemap:
+                name: 'NAG-MIB::sysFanStatus'
+              tags:
+                - tag: component
+                  value: fan
+              trigger_prototypes:
+                - uuid: '79208f78c6a84347b199c5535527c873'
+                  expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.fan.status[{#SNMPINDEX}])<>0'
+                  name: 'Fan {#SNMPINDEX} is in abnormal state'
+                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  priority: AVERAGE
+                  tags:
+                    - tag: scope
+                      value: availability
+            - uuid: '210d4793f44d4876831432639709b9d6'
+              name: 'Fan {#SNMPINDEX}: Speed'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.4.1.40418.7.100.1.12.1.10.{#SNMPINDEX}'
+              key: 'snr.fan.speed[{#SNMPINDEX}]'
+              units: rpm
+              tags:
+                - tag: component
+                  value: fan
+          preprocessing:
+            - type: SNMP_WALK_TO_JSON
+              parameters:
+                - '{#FAN.STATUS}'
+                - 1.3.6.1.4.1.40418.7.100.1.12.1.3
+                - '0'
+        - uuid: 'dd99ddaad31149b8b35f56ecdd7c9523'
+          name: 'Network interfaces discovery'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.2.1.31.1.1.1.1,1.3.6.1.2.1.31.1.1.1.18,1.3.6.1.2.1.2.2.1.3,1.3.6.1.2.1.2.2.1.7]'
+          key: 'net.if.discovery'
+          delay: 1h
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.MATCHES}'
+                formulaid: A
+              - macro: '{#IFNAME}'
+                value: '{$NET.IF.IFNAME.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+                formulaid: C
+          description: 'IF-MIB interfaces. By default only ethernetCsmacd (ifType 6) ports that are administratively up.'
+          item_prototypes:
+            - uuid: 'db93c1bda73c41b2baa0df2bc536477e'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Operational status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'net.if.status[ifOperStatus.{#SNMPINDEX}]'
+              history: 7d
+              trends: '0'
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '1bb57a79969b45908c37a51fce96a131'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Bits received'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '6c9838af5f8b4e409b204f96f47b9aed'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Bits sent'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '25ba18f34a26474487bfd82d3316a1df'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Inbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'net.if.in.errors[ifInErrors.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '5fe2954e76e44e869c5b15aa64756754'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Outbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'net.if.out.errors[ifOutErrors.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'ddc45d178e464a0fb74f561319697ae8'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Inbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'net.if.in.discards[ifInDiscards.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'ceebd37df831493fb84a295ad6626110'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Outbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'net.if.out.discards[ifOutDiscards.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'bca97a646da9481f964489c1b0124bf5'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Speed'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.15.{#SNMPINDEX}'
+              key: 'net.if.speed[ifHighSpeed.{#SNMPINDEX}]'
+              delay: 5m
+              units: bps
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+          trigger_prototypes:
+            - uuid: '8e694929e65e40a68d455d1825e3e959'
+              expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+              opdata: 'Current state: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              description: |
+                The port was up and went down. Fires only on state change.
+                Disable for a port with macro {$IFCONTROL:"<ifName>"}=0.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: 'b9c6671c7f8e4ab8a76a85ca137872d8'
+              expression: 'min(/SNR-S5210G-24FX-UPS by SNMP/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"} or min(/SNR-S5210G-24FX-UPS by SNMP/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8 and max(/SNR-S5210G-24FX-UPS by SNMP/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
+              name: 'Interface {#IFNAME}({#IFALIAS}): High error rate'
+              opdata: 'errors in: {ITEM.LASTVALUE1}, out: {ITEM.LASTVALUE2}'
+              priority: WARNING
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+                  recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              tags:
+                - tag: scope
+                  value: performance
+          graph_prototypes:
+            - uuid: '0759408bb7754421b6f5db5110c1f0d7'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Network traffic'
+              graph_items:
+                - drawtype: GRADIENT_LINE
+                  color: 1A7C11
+                  item:
+                    host: 'SNR-S5210G-24FX-UPS by SNMP'
+                    key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+                - sortorder: '1'
+                  drawtype: BOLD_LINE
+                  color: 2774A4
+                  item:
+                    host: 'SNR-S5210G-24FX-UPS by SNMP'
+                    key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+          preprocessing:
+            - type: SNMP_WALK_TO_JSON
+              parameters:
+                - '{#IFNAME}'
+                - 1.3.6.1.2.1.31.1.1.1.1
+                - '0'
+                - '{#IFALIAS}'
+                - 1.3.6.1.2.1.31.1.1.1.18
+                - '0'
+                - '{#IFTYPE}'
+                - 1.3.6.1.2.1.2.2.1.3
+                - '0'
+                - '{#IFADMINSTATUS}'
+                - 1.3.6.1.2.1.2.2.1.7
+                - '0'
+        - uuid: 'e0ffc85895574f4483f14b85a22e2fc4'
+          name: 'SFP DDM discovery'
+          type: DEPENDENT
+          key: 'snr.ddm.discovery'
+          delay: '0'
+          filter:
+            conditions:
+              - macro: '{#DDM.TEMP}'
+                value: '[0-9]'
+                formulaid: A
+          description: 'NAG-MIB::ddmTranscDiagnosisTable. Only ports with an inserted transceiver that reports DDM ("NULL" = empty slot or no DDM). Index is 5001+ (not ifIndex), port name is taken from ddmTransSerialName.'
+          item_prototypes:
+            - uuid: 'a31ebcff25884e97adcc13d40126fe89'
+              name: 'SFP {#PORTNAME}: Port admin status'
+              type: DEPENDENT
+              key: 'snr.ddm.admin[{#SNMPINDEX}]'
+              history: 7d
+              trends: '0'
+              description: 'IF-MIB::ifAdminStatus. DDM triggers fire only when the port is administratively up.'
+              valuemap:
+                name: 'IF-MIB::ifAdminStatus'
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.2.1.2.2.1.7.{#SNMPINDEX}'
+                    - '0'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '11546e8f142a44daa4d8357d8ae027d6'
+              name: 'SFP {#PORTNAME}: temperature'
+              type: DEPENDENT
+              key: 'snr.ddm.temp[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: '°C'
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.2.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: 'f7bd94a4367842119f31639007f373b5'
+              name: 'SFP {#PORTNAME}: temperature high alarm threshold'
+              type: DEPENDENT
+              key: 'snr.ddm.temp.high.alarm[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: '°C'
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.3.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '1679ad642baf49ab8fc4e8caa4688a41'
+              name: 'SFP {#PORTNAME}: voltage'
+              type: DEPENDENT
+              key: 'snr.ddm.voltage[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: V
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.7.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: 'b804194c83be4c7faa46e049c689531e'
+              name: 'SFP {#PORTNAME}: bias current'
+              type: DEPENDENT
+              key: 'snr.ddm.bias[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: mA
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.12.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '24c58ae749da45348415f4c681a1326d'
+              name: 'SFP {#PORTNAME}: RX power'
+              type: DEPENDENT
+              key: 'snr.ddm.rx[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: dBm
+              description: |
+                {#SFP.VENDOR} {#SFP.TYPE} {#SFP.WAVELENGTH}, S/N {#SFP.SERIAL}.
+                No signal is reported by the switch as -40.00; a non-numeric value is stored as {$DDM.NO.SIGNAL} dBm.
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.17.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '{$DDM.NO.SIGNAL}'
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '6380bcba96924380b45e4d5a9ed2cc18'
+              name: 'SFP {#PORTNAME}: RX power high alarm threshold'
+              type: DEPENDENT
+              key: 'snr.ddm.rx.high.alarm[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.18.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '7fcba1ed286e4d9185baa8aec243b5af'
+              name: 'SFP {#PORTNAME}: RX power low alarm threshold'
+              type: DEPENDENT
+              key: 'snr.ddm.rx.low.alarm[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.19.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '33bfd56c47b644ccb222ac457e1d4823'
+              name: 'SFP {#PORTNAME}: RX power low warning threshold'
+              type: DEPENDENT
+              key: 'snr.ddm.rx.low.warn[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.21.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: 'eec5d20aea3940d28700d7156f35cf15'
+              name: 'SFP {#PORTNAME}: TX power'
+              type: DEPENDENT
+              key: 'snr.ddm.tx[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: dBm
+              description: '"-" (no signal) is stored as {$DDM.NO.SIGNAL} dBm.'
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.22.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: CUSTOM_VALUE
+                  error_handler_params: '{$DDM.NO.SIGNAL}'
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '819bb88111b3417d95992cc32c9befc8'
+              name: 'SFP {#PORTNAME}: TX power low alarm threshold'
+              type: DEPENDENT
+              key: 'snr.ddm.tx.low.alarm[{#SNMPINDEX}]'
+              value_type: FLOAT
+              units: dBm
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.1.1.24.{#SNMPINDEX}'
+                    - '0'
+                - type: REGEX
+                  parameters:
+                    - '(-?[0-9]+(\.[0-9]+)?)'
+                    - '\1'
+                  error_handler: DISCARD_VALUE
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+            - uuid: '22e724703ece4ebd9bf3f6240c0162a1'
+              name: 'SFP {#PORTNAME}: Serial number'
+              type: DEPENDENT
+              key: 'snr.ddm.serial[{#SNMPINDEX}]'
+              history: 30d
+              value_type: CHAR
+              description: '{#SFP.VENDOR} {#SFP.TYPE} {#SFP.WAVELENGTH}'
+              preprocessing:
+                - type: SNMP_WALK_VALUE
+                  parameters:
+                    - '1.3.6.1.4.1.40418.7.100.30.3.1.3.{#SNMPINDEX}'
+                    - '0'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 12h
+              master_item:
+                key: snr.ddm.walk
+              tags:
+                - tag: component
+                  value: ddm
+                - tag: port
+                  value: '{#PORTNAME}'
+              trigger_prototypes:
+                - uuid: 'f6a00725cc334ea09ed16ab996d71698'
+                  expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}],#2) and length(last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}]))>0'
+                  name: 'SFP {#PORTNAME}: Transceiver has been replaced'
+                  opdata: 'S/N: {ITEM.LASTVALUE1}'
+                  priority: INFO
+                  manual_close: 'YES'
+                  tags:
+                    - tag: scope
+                      value: notice
+          trigger_prototypes:
+            - uuid: '4b0bc732ed1e4eab87782a84b91b2a46'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.alarm[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
+              name: 'SFP {#PORTNAME}: RX power is below low alarm threshold'
+              opdata: 'RX: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              priority: AVERAGE
+              description: 'Includes loss of signal ("-" = {$DDM.NO.SIGNAL} dBm).'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: '6d9d8d297b6e4b4d87ee9c2f0c75c1de'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.warn[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
+              name: 'SFP {#PORTNAME}: RX power is below low warning threshold'
+              opdata: 'RX: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              priority: WARNING
+              dependencies:
+                - name: 'SFP {#PORTNAME}: RX power is below low alarm threshold'
+                  expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.alarm[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: '5b236691b2f94be2b4a62e2663ba5591'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.high.alarm[{#SNMPINDEX}])+{$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
+              name: 'SFP {#PORTNAME}: RX power is above high alarm threshold'
+              opdata: 'RX: {ITEM.LASTVALUE1}, module threshold: {ITEM.LASTVALUE2}, offset: {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} dB'
+              priority: WARNING
+              description: 'Threshold = module high alarm threshold + {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} (dB). Set the macro on the host to relax it for one port, e.g. macro DDM.RX.HIGH.OFFSET with context ge16 = 5.'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: 'df8238a710c9495e89cea474deb62ed7'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.tx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.tx.low.alarm[{#SNMPINDEX}]) and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
+              name: 'SFP {#PORTNAME}: TX power is below low alarm threshold'
+              opdata: 'TX: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: '0517f147518940b292a16592d470770a'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])'
+              name: 'SFP {#PORTNAME}: temperature is above high alarm threshold'
+              opdata: 'Temp: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              priority: WARNING
+              tags:
+                - tag: scope
+                  value: performance
+          master_item:
+            key: snr.ddm.walk
+          preprocessing:
+            - type: SNMP_WALK_TO_JSON
+              parameters:
+                - '{#DDM.TEMP}'
+                - 1.3.6.1.4.1.40418.7.100.30.1.1.2
+                - '0'
+                - '{#PORTNAME}'
+                - 1.3.6.1.4.1.40418.7.100.30.3.1.2
+                - '0'
+                - '{#SFP.SERIAL}'
+                - 1.3.6.1.4.1.40418.7.100.30.3.1.3
+                - '0'
+                - '{#SFP.VENDOR}'
+                - 1.3.6.1.4.1.40418.7.100.30.3.1.4
+                - '0'
+                - '{#SFP.TYPE}'
+                - 1.3.6.1.4.1.40418.7.100.30.3.1.6
+                - '0'
+                - '{#SFP.WAVELENGTH}'
+                - 1.3.6.1.4.1.40418.7.100.30.3.1.8
+                - '0'
+      tags:
+        - tag: class
+          value: network
+        - tag: target
+          value: snr
+      macros:
+        - macro: '{$CPU.UTIL.CRIT}'
+          value: '90'
+        - macro: '{$MEMORY.UTIL.MAX}'
+          value: '90'
+        - macro: '{$TEMP.WARN}'
+          value: '60'
+        - macro: '{$TEMP.CRIT}'
+          value: '75'
+        - macro: '{$UPS.BATTERY.LEVEL.MIN}'
+          value: '30'
+          description: 'Battery level (%) below which a trigger fires.'
+        - macro: '{$SNMP.TIMEOUT}'
+          value: 5m
+        - macro: '{$IFCONTROL}'
+          value: '1'
+          description: 'Link down trigger: 1 - enabled, 0 - disabled. Per port: {$IFCONTROL:"<ifName>"}.'
+        - macro: '{$IF.ERRORS.WARN}'
+          value: '2'
+          description: 'Errors per second threshold.'
+        - macro: '{$NET.IF.IFTYPE.MATCHES}'
+          value: '^6$'
+          description: 'ifType filter. 6 = ethernetCsmacd.'
+        - macro: '{$NET.IF.IFNAME.NOT_MATCHES}'
+          value: '(^Software Loopback|^NULL[0-9.]*$|^[Ll]o[0-9.]*$|^[Ss]ystem$|^Nu[0-9.]*$)'
+        - macro: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+          value: '^1$'
+          description: 'Discover only administratively up ports. Set ^.* to discover all.'
+        - macro: '{$DDM.RX.HIGH.OFFSET}'
+          value: '0'
+          description: 'dB added to the module RX high alarm threshold. Per port: {$DDM.RX.HIGH.OFFSET:"ge16"}=5.'
+        - macro: '{$DDM.RX.LOW.OFFSET}'
+          value: '0'
+          description: 'dB subtracted from the module RX low alarm/warning thresholds. Per port: {$DDM.RX.LOW.OFFSET:"ge20"}=3.'
+        - macro: '{$DDM.NO.SIGNAL}'
+          value: '-40'
+          description: 'Value (dBm) stored when the switch reports "-" (no light).'
+      valuemaps:
+        - uuid: 'b4802fcde5e04f2193b92210fb1e98d7'
+          name: 'IF-MIB::ifAdminStatus'
+          mappings:
+            - value: '1'
+              newvalue: up
+            - value: '2'
+              newvalue: down
+            - value: '3'
+              newvalue: testing
+        - uuid: 'ca69afb349d94b6ea53cb2b51a0d3649'
+          name: 'IF-MIB::ifOperStatus'
+          mappings:
+            - value: '1'
+              newvalue: up
+            - value: '2'
+              newvalue: down
+            - value: '3'
+              newvalue: testing
+            - value: '4'
+              newvalue: unknown
+            - value: '5'
+              newvalue: dormant
+            - value: '6'
+              newvalue: notPresent
+            - value: '7'
+              newvalue: lowerLayerDown
+        - uuid: 'ff39ef57e635443d806bb949dade23e6'
+          name: 'NAG-MIB::priACPowerStatus'
+          mappings:
+            - value: '1'
+              newvalue: normal
+            - value: '2'
+              newvalue: abnormal
+        - uuid: '15974372b4f44da9aaecbfdb7c9aed4a'
+          name: 'NAG-MIB::priBatteryStatus'
+          mappings:
+            - value: '1'
+              newvalue: charged
+            - value: '2'
+              newvalue: discharging
+            - value: '5'
+              newvalue: 'not connected'
+            - value: '6'
+              newvalue: fail
+            - value: '7'
+              newvalue: charging
+        - uuid: '43e069245da140ff939e7f76d1a8fe02'
+          name: 'NAG-MIB::priSecPowerStatus'
+          mappings:
+            - value: '0'
+              newvalue: none
+            - value: '1'
+              newvalue: normal
+            - value: '2'
+              newvalue: abnormal
+        - uuid: 'b489c9d56bcf4771baa18d23c0ac907c'
+          name: 'NAG-MIB::sysFanStatus'
+          mappings:
+            - value: '0'
+              newvalue: normal
+            - value: '1'
+              newvalue: abnormal
+            - value: '2'
+              newvalue: error
+        - uuid: '34186304bea8407f82de93520b65b6f1'
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up
+        - uuid: '01a272977ec04cc598cd9a6de63655c4'
+          name: 'zabbix.host.available'
+          mappings:
+            - value: '0'
+              newvalue: 'not available'
+            - value: '1'
+              newvalue: available
+            - value: '2'
+              newvalue: unknown
+  triggers:
+    - uuid: '19d43101814e4f9a8468b2628226b661'
+      expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.power.ac)=2 or last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=2'
+      name: 'AC power lost, switch is running on battery'
+      opdata: 'AC: {ITEM.LASTVALUE1}, battery: {ITEM.LASTVALUE2}'
+      priority: HIGH
+      description: 'Fires when AC power is abnormal (priACPowerStatus=2) or the battery is discharging (priBatteryStatus=2). Resolves when both are back to normal.'
+      tags:
+        - tag: scope
+          value: availability
+    - uuid: '802f5808195545b59dc112d2a237ade4'
+      expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.level)<{$UPS.BATTERY.LEVEL.MIN} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)<>5'
+      name: 'UPS battery level is low (<{$UPS.BATTERY.LEVEL.MIN}%)'
+      opdata: 'Level: {ITEM.LASTVALUE1}, status: {ITEM.LASTVALUE2}'
+      priority: HIGH
+      tags:
+        - tag: scope
+          value: availability
