@@ -319,6 +319,66 @@ zabbix_export:
           tags:
             - tag: component
               value: ups
+        - uuid: '95a20e1fcbe04d239903b083315a0ccf'
+          name: 'Fan 1: Status'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.12.1.3.1
+          key: snr.fan1.status
+          description: 'NAG-MIB::sysFanStatus.1. Polled by GET: the switch agent hangs on GETNEXT/GETBULK past the end of sysFanTable columns, so fan discovery (walk) always times out.'
+          valuemap:
+            name: 'NAG-MIB::sysFanStatus'
+          tags:
+            - tag: component
+              value: fan
+          triggers:
+            - uuid: '9717ceb0bfab4d979dd072ed819f5aaa'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.fan1.status)<>0'
+              name: 'Вентилятор 1 в аварийном состоянии'
+              opdata: 'Текущее состояние: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 'e96595efc00d427ba1194413399b9683'
+          name: 'Fan 1: Speed'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.12.1.10.1
+          key: snr.fan1.speed
+          units: rpm
+          description: 'NAG-MIB::sysFanSpeedRpm.1'
+          tags:
+            - tag: component
+              value: fan
+        - uuid: '40616fa7eaf040ca9985e3400d40be2b'
+          name: 'Fan 2: Status'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.12.1.3.2
+          key: snr.fan2.status
+          description: 'NAG-MIB::sysFanStatus.2. Polled by GET: the switch agent hangs on GETNEXT/GETBULK past the end of sysFanTable columns, so fan discovery (walk) always times out.'
+          valuemap:
+            name: 'NAG-MIB::sysFanStatus'
+          tags:
+            - tag: component
+              value: fan
+          triggers:
+            - uuid: '6f45e8d9e37f4b0abccc478225bd572f'
+              expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.fan2.status)<>0'
+              name: 'Вентилятор 2 в аварийном состоянии'
+              opdata: 'Текущее состояние: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: '865a7e72d2564b42b203f17f5e304bfb'
+          name: 'Fan 2: Speed'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.40418.7.100.1.12.1.10.2
+          key: snr.fan2.speed
+          units: rpm
+          description: 'NAG-MIB::sysFanSpeedRpm.2'
+          tags:
+            - tag: component
+              value: fan
         - uuid: 'd275eff1c65f4b8fa1f528fdd6ff9457'
           name: 'SFP DDM: Get table'
           type: SNMP_AGENT
@@ -332,48 +392,6 @@ zabbix_export:
             - tag: component
               value: raw
       discovery_rules:
-        - uuid: 'b70a3e50168c4c5ca568d55a1954ddad'
-          name: 'Fan discovery'
-          type: SNMP_AGENT
-          snmp_oid: 'walk[1.3.6.1.4.1.40418.7.100.1.12.1.3]'
-          key: 'snr.fan.discovery'
-          delay: 1h
-          description: 'NAG-MIB::sysFanTable. Empty on fanless models.'
-          item_prototypes:
-            - uuid: '881be3b67a03493996547de13f60e10c'
-              name: 'Fan {#SNMPINDEX}: Status'
-              type: SNMP_AGENT
-              snmp_oid: '1.3.6.1.4.1.40418.7.100.1.12.1.3.{#SNMPINDEX}'
-              key: 'snr.fan.status[{#SNMPINDEX}]'
-              valuemap:
-                name: 'NAG-MIB::sysFanStatus'
-              tags:
-                - tag: component
-                  value: fan
-              trigger_prototypes:
-                - uuid: '79208f78c6a84347b199c5535527c873'
-                  expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.fan.status[{#SNMPINDEX}])<>0'
-                  name: 'Вентилятор {#SNMPINDEX} в аварийном состоянии'
-                  opdata: 'Текущее состояние: {ITEM.LASTVALUE1}'
-                  priority: AVERAGE
-                  tags:
-                    - tag: scope
-                      value: availability
-            - uuid: '210d4793f44d4876831432639709b9d6'
-              name: 'Fan {#SNMPINDEX}: Speed'
-              type: SNMP_AGENT
-              snmp_oid: '1.3.6.1.4.1.40418.7.100.1.12.1.10.{#SNMPINDEX}'
-              key: 'snr.fan.speed[{#SNMPINDEX}]'
-              units: rpm
-              tags:
-                - tag: component
-                  value: fan
-          preprocessing:
-            - type: SNMP_WALK_TO_JSON
-              parameters:
-                - '{#FAN.STATUS}'
-                - 1.3.6.1.4.1.40418.7.100.1.12.1.3
-                - '0'
         - uuid: 'dd99ddaad31149b8b35f56ecdd7c9523'
           name: 'Network interfaces discovery'
           type: SNMP_AGENT
