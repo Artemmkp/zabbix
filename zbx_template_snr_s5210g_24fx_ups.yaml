@@ -32,9 +32,9 @@ zabbix_export:
           triggers:
             - uuid: 'efaf79c2ff5c49d394aef115229e5689'
               expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/icmpping,#3)=0'
-              name: 'Unavailable by ICMP ping'
+              name: 'Нет ответа на ICMP ping'
               priority: HIGH
-              description: 'Last three attempts returned timeout.'
+              description: 'Три последние попытки завершились таймаутом.'
               tags:
                 - tag: scope
                   value: availability
@@ -51,11 +51,11 @@ zabbix_export:
           triggers:
             - uuid: '7fa33ee5123c42b1bc5889ae651c5855'
               expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
-              name: 'No SNMP data collection'
+              name: 'Нет данных по SNMP'
               priority: WARNING
-              description: 'SNMP is not available for polling. Check community/credentials and ACL on the switch.'
+              description: 'SNMP недоступен для опроса. Проверьте community/учётные данные и ACL на коммутаторе.'
               dependencies:
-                - name: 'Unavailable by ICMP ping'
+                - name: 'Нет ответа на ICMP ping'
                   expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/icmpping,#3)=0'
               tags:
                 - tag: scope
@@ -95,7 +95,7 @@ zabbix_export:
           triggers:
             - uuid: '4199c659c38f4635ab23c27b1985c52b'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/system.descr,#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/system.descr,#2) and length(last(/SNR-S5210G-24FX-UPS by SNMP/system.descr))>0'
-              name: 'Firmware has changed'
+              name: 'Изменилась версия прошивки'
               priority: INFO
               manual_close: 'YES'
               tags:
@@ -134,11 +134,11 @@ zabbix_export:
           triggers:
             - uuid: 'ae9636828d5a4c5e91ccce807bf12b42'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/system.uptime)<10m'
-              name: 'Device has been restarted (uptime < 10m)'
+              name: 'Устройство перезагружено (uptime < 10 мин)'
               priority: WARNING
               manual_close: 'YES'
               dependencies:
-                - name: 'No SNMP data collection'
+                - name: 'Нет данных по SNMP'
                   expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
               tags:
                 - tag: scope
@@ -173,8 +173,8 @@ zabbix_export:
           triggers:
             - uuid: 'ddc97972d2644d579dd15c5814014438'
               expression: 'min(/SNR-S5210G-24FX-UPS by SNMP/snr.cpu.util,5m)>{$CPU.UTIL.CRIT}'
-              name: 'High CPU utilization (over {$CPU.UTIL.CRIT}% for 5m)'
-              opdata: 'Current: {ITEM.LASTVALUE1}'
+              name: 'Высокая загрузка CPU (более {$CPU.UTIL.CRIT}% в течение 5 мин)'
+              opdata: 'Текущее значение: {ITEM.LASTVALUE1}'
               priority: WARNING
               tags:
                 - tag: scope
@@ -193,8 +193,8 @@ zabbix_export:
           triggers:
             - uuid: '677a50bed41d4bbaa5871302a59e42e9'
               expression: 'min(/SNR-S5210G-24FX-UPS by SNMP/snr.memory.util,5m)>{$MEMORY.UTIL.MAX}'
-              name: 'High memory utilization (over {$MEMORY.UTIL.MAX}% for 5m)'
-              opdata: 'Current: {ITEM.LASTVALUE1}'
+              name: 'Высокое использование памяти (более {$MEMORY.UTIL.MAX}% в течение 5 мин)'
+              opdata: 'Текущее значение: {ITEM.LASTVALUE1}'
               priority: AVERAGE
               tags:
                 - tag: scope
@@ -215,8 +215,8 @@ zabbix_export:
               expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)>{$TEMP.CRIT}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)<{$TEMP.CRIT}-3'
-              name: 'Temperature is above critical threshold (>{$TEMP.CRIT}°C)'
-              opdata: 'Current: {ITEM.LASTVALUE1}'
+              name: 'Температура выше критического порога (>{$TEMP.CRIT}°C)'
+              opdata: 'Текущее значение: {ITEM.LASTVALUE1}'
               priority: HIGH
               tags:
                 - tag: scope
@@ -225,11 +225,11 @@ zabbix_export:
               expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)>{$TEMP.WARN}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)<{$TEMP.WARN}-3'
-              name: 'Temperature is above warning threshold (>{$TEMP.WARN}°C)'
-              opdata: 'Current: {ITEM.LASTVALUE1}'
+              name: 'Температура выше порога предупреждения (>{$TEMP.WARN}°C)'
+              opdata: 'Текущее значение: {ITEM.LASTVALUE1}'
               priority: WARNING
               dependencies:
-                - name: 'Temperature is above critical threshold (>{$TEMP.CRIT}°C)'
+                - name: 'Температура выше критического порога (>{$TEMP.CRIT}°C)'
                   expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)>{$TEMP.CRIT}'
                   recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/snr.temperature,5m)<{$TEMP.CRIT}-3'
               tags:
@@ -261,7 +261,7 @@ zabbix_export:
           triggers:
             - uuid: '40254741912843e89587f12b541a3e79'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.power.secondary)=2'
-              name: 'Secondary power supply is abnormal'
+              name: 'Неисправность резервного источника питания'
               priority: AVERAGE
               tags:
                 - tag: scope
@@ -281,14 +281,14 @@ zabbix_export:
           triggers:
             - uuid: '99a4877116254ec6a0bca6c554cf097c'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=6'
-              name: 'UPS battery failure'
+              name: 'Неисправность батареи ИБП'
               priority: HIGH
               tags:
                 - tag: scope
                   value: availability
             - uuid: 'edd3a48747eb487c88231abeb7bf60b2'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=5'
-              name: 'UPS battery is not connected'
+              name: 'Батарея ИБП не подключена'
               priority: HIGH
               tags:
                 - tag: scope
@@ -353,8 +353,8 @@ zabbix_export:
               trigger_prototypes:
                 - uuid: '79208f78c6a84347b199c5535527c873'
                   expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.fan.status[{#SNMPINDEX}])<>0'
-                  name: 'Fan {#SNMPINDEX} is in abnormal state'
-                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  name: 'Вентилятор {#SNMPINDEX} в аварийном состоянии'
+                  opdata: 'Текущее состояние: {ITEM.LASTVALUE1}'
                   priority: AVERAGE
                   tags:
                     - tag: scope
@@ -529,12 +529,12 @@ zabbix_export:
               expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
-              name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
-              opdata: 'Current state: {ITEM.LASTVALUE1}'
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): нет линка'
+              opdata: 'Текущее состояние: {ITEM.LASTVALUE1}'
               priority: AVERAGE
               description: |
-                The port was up and went down. Fires only on state change.
-                Disable for a port with macro {$IFCONTROL:"<ifName>"}=0.
+                Порт был поднят и упал. Срабатывает только при смене состояния.
+                Отключить для порта: макрос {$IFCONTROL:"<ifName>"}=0.
               manual_close: 'YES'
               tags:
                 - tag: scope
@@ -543,12 +543,12 @@ zabbix_export:
               expression: 'min(/SNR-S5210G-24FX-UPS by SNMP/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"} or min(/SNR-S5210G-24FX-UPS by SNMP/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'max(/SNR-S5210G-24FX-UPS by SNMP/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8 and max(/SNR-S5210G-24FX-UPS by SNMP/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
-              name: 'Interface {#IFNAME}({#IFALIAS}): High error rate'
-              opdata: 'errors in: {ITEM.LASTVALUE1}, out: {ITEM.LASTVALUE2}'
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): высокий уровень ошибок'
+              opdata: 'Ошибок/с: вход {ITEM.LASTVALUE1}, выход {ITEM.LASTVALUE2}'
               priority: WARNING
               manual_close: 'YES'
               dependencies:
-                - name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+                - name: 'Интерфейс {#IFNAME}({#IFALIAS}): нет линка'
                   expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
                   recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
               tags:
@@ -558,17 +558,17 @@ zabbix_export:
               expression: '(avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.in[ifHCInOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.out[ifHCOutOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.in[ifHCInOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})<(({$IF.UTIL.MAX:"{#IFNAME}"}-5)/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.out[ifHCOutOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})<(({$IF.UTIL.MAX:"{#IFNAME}"}-5)/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])'
-              name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage (>{$IF.UTIL.MAX:"{#IFNAME}"}%)'
-              event_name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage (>{$IF.UTIL.MAX:"{#IFNAME}"}% of {ITEM.LASTVALUE2})'
-              opdata: 'In: {ITEM.LASTVALUE1}, out: {ITEM.LASTVALUE3}, speed: {ITEM.LASTVALUE2}'
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): высокая загрузка канала (>{$IF.UTIL.MAX:"{#IFNAME}"}%)'
+              event_name: 'Интерфейс {#IFNAME}({#IFALIAS}): высокая загрузка канала (>{$IF.UTIL.MAX:"{#IFNAME}"}% от {ITEM.LASTVALUE2})'
+              opdata: 'Вход: {ITEM.LASTVALUE1}, выход: {ITEM.LASTVALUE3}, скорость: {ITEM.LASTVALUE2}'
               priority: WARNING
               description: |
-                Average inbound or outbound traffic over {$IF.UTIL.TIME} exceeds {$IF.UTIL.MAX:"{#IFNAME}"}% of the link speed.
-                Link speed is the actual negotiated speed (IF-MIB::ifHighSpeed), so a 1G SFP in a 10G port is measured against 1 Gbps.
-                Resolves when both directions drop below {$IF.UTIL.MAX:"{#IFNAME}"}-5%.
-                Per port threshold: {$IF.UTIL.MAX:"<ifName>"}.
+                Средний входящий или исходящий трафик за {$IF.UTIL.TIME} превышает {$IF.UTIL.MAX:"{#IFNAME}"}% скорости порта.
+                Скорость берётся фактическая (IF-MIB::ifHighSpeed), поэтому SFP на 1G в 10G-порту считается от 1 Гбит/с.
+                Закрывается, когда оба направления ниже {$IF.UTIL.MAX:"{#IFNAME}"}-5%.
+                Порог для порта: {$IF.UTIL.MAX:"<ifName>"}.
               dependencies:
-                - name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+                - name: 'Интерфейс {#IFNAME}({#IFALIAS}): нет линка'
                   expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
                   recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
               tags:
@@ -578,16 +578,16 @@ zabbix_export:
               expression: '{$IF.SPEED.CONTROL:"{#IFNAME}"}=1 and change(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])<0 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: '(change(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2)>0) or last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 or {$IF.SPEED.CONTROL:"{#IFNAME}"}=0'
-              name: 'Interface {#IFNAME}({#IFALIAS}): Ethernet has changed to lower speed than it was before'
-              opdata: 'Current speed: {ITEM.LASTVALUE2}'
+              name: 'Интерфейс {#IFNAME}({#IFALIAS}): скорость порта снизилась'
+              opdata: 'Текущая скорость: {ITEM.LASTVALUE2}'
               priority: INFO
               description: |
-                The link stays up but negotiated at a lower speed (e.g. 1000 -> 100 Mbps): bad cable/connector, autonegotiation issue, or a slower SFP.
-                Resolves when the speed goes back up, the link goes down, or manually.
-                Disable for a port with macro {$IF.SPEED.CONTROL:"<ifName>"}=0.
+                Линк поднят, но согласовался на меньшей скорости (например, 1000 -> 100 Мбит/с): плохой кабель/коннектор, проблема автосогласования или более медленный SFP.
+                Закрывается, когда скорость вернулась, линк упал, или вручную.
+                Отключить для порта: макрос {$IF.SPEED.CONTROL:"<ifName>"}=0.
               manual_close: 'YES'
               dependencies:
-                - name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+                - name: 'Интерфейс {#IFNAME}({#IFALIAS}): нет линка'
                   expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
                   recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
               tags:
@@ -935,8 +935,8 @@ zabbix_export:
               trigger_prototypes:
                 - uuid: 'f6a00725cc334ea09ed16ab996d71698'
                   expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}],#2) and length(last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}]))>0'
-                  name: 'SFP {#PORTNAME}: Transceiver has been replaced'
-                  opdata: 'S/N: {ITEM.LASTVALUE1}'
+                  name: 'SFP {#PORTNAME}: трансивер заменён'
+                  opdata: 'Серийный номер: {ITEM.LASTVALUE1}'
                   priority: INFO
                   manual_close: 'YES'
                   tags:
@@ -945,37 +945,37 @@ zabbix_export:
           trigger_prototypes:
             - uuid: '4b0bc732ed1e4eab87782a84b91b2a46'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.alarm[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: RX power is below low alarm threshold'
-              opdata: 'RX: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              name: 'SFP {#PORTNAME}: уровень RX ниже аварийного порога'
+              opdata: 'RX: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: AVERAGE
-              description: 'Includes loss of signal ("-" = {$DDM.NO.SIGNAL} dBm).'
+              description: 'Включая потерю сигнала ("-" = {$DDM.NO.SIGNAL} dBm).'
               tags:
                 - tag: scope
                   value: availability
             - uuid: '6d9d8d297b6e4b4d87ee9c2f0c75c1de'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.warn[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: RX power is below low warning threshold'
-              opdata: 'RX: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              name: 'SFP {#PORTNAME}: уровень RX ниже порога предупреждения'
+              opdata: 'RX: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: WARNING
               dependencies:
-                - name: 'SFP {#PORTNAME}: RX power is below low alarm threshold'
+                - name: 'SFP {#PORTNAME}: уровень RX ниже аварийного порога'
                   expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.alarm[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
               tags:
                 - tag: scope
                   value: performance
             - uuid: '5b236691b2f94be2b4a62e2663ba5591'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.high.alarm[{#SNMPINDEX}])+{$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: RX power is above high alarm threshold'
-              opdata: 'RX: {ITEM.LASTVALUE1}, module threshold: {ITEM.LASTVALUE2}, offset: {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} dB'
+              name: 'SFP {#PORTNAME}: уровень RX выше аварийного порога'
+              opdata: 'RX: {ITEM.LASTVALUE1}, порог модуля: {ITEM.LASTVALUE2}, поправка: {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} dB'
               priority: WARNING
-              description: 'Threshold = module high alarm threshold + {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} (dB). Set the macro on the host to relax it for one port, e.g. macro DDM.RX.HIGH.OFFSET with context ge16 = 5.'
+              description: 'Порог = верхний аварийный порог модуля + {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} (dB). Чтобы ослабить порог для одного порта, задайте макрос на узле, например DDM.RX.HIGH.OFFSET с контекстом ge16 = 5.'
               tags:
                 - tag: scope
                   value: performance
             - uuid: 'df8238a710c9495e89cea474deb62ed7'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.tx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.tx.low.alarm[{#SNMPINDEX}]) and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: TX power is below low alarm threshold'
-              opdata: 'TX: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              name: 'SFP {#PORTNAME}: уровень TX ниже аварийного порога'
+              opdata: 'TX: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: AVERAGE
               tags:
                 - tag: scope
@@ -984,8 +984,8 @@ zabbix_export:
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])-3'
-              name: 'SFP {#PORTNAME}: temperature is above high alarm threshold'
-              opdata: 'Temp: {ITEM.LASTVALUE1}, threshold: {ITEM.LASTVALUE2}'
+              name: 'SFP {#PORTNAME}: температура выше аварийного порога'
+              opdata: 'Температура: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: WARNING
               tags:
                 - tag: scope
@@ -1073,7 +1073,7 @@ zabbix_export:
             - value: '2'
               newvalue: down
             - value: '3'
-              newvalue: testing
+              newvalue: 'тестирование'
         - uuid: 'ca69afb349d94b6ea53cb2b51a0d3649'
           name: 'IF-MIB::ifOperStatus'
           mappings:
@@ -1082,85 +1082,85 @@ zabbix_export:
             - value: '2'
               newvalue: down
             - value: '3'
-              newvalue: testing
+              newvalue: 'тестирование'
             - value: '4'
-              newvalue: unknown
+              newvalue: 'неизвестно'
             - value: '5'
-              newvalue: dormant
+              newvalue: 'ожидание'
             - value: '6'
-              newvalue: notPresent
+              newvalue: 'отсутствует'
             - value: '7'
-              newvalue: lowerLayerDown
+              newvalue: 'нижний уровень недоступен'
         - uuid: 'ff39ef57e635443d806bb949dade23e6'
           name: 'NAG-MIB::priACPowerStatus'
           mappings:
             - value: '1'
-              newvalue: normal
+              newvalue: 'норма'
             - value: '2'
-              newvalue: abnormal
+              newvalue: 'авария'
         - uuid: '15974372b4f44da9aaecbfdb7c9aed4a'
           name: 'NAG-MIB::priBatteryStatus'
           mappings:
             - value: '1'
-              newvalue: charged
+              newvalue: 'заряжена'
             - value: '2'
-              newvalue: discharging
+              newvalue: 'разряжается'
             - value: '5'
-              newvalue: 'not connected'
+              newvalue: 'не подключена'
             - value: '6'
-              newvalue: fail
+              newvalue: 'неисправна'
             - value: '7'
-              newvalue: charging
+              newvalue: 'заряжается'
         - uuid: '43e069245da140ff939e7f76d1a8fe02'
           name: 'NAG-MIB::priSecPowerStatus'
           mappings:
             - value: '0'
-              newvalue: none
+              newvalue: 'отсутствует'
             - value: '1'
-              newvalue: normal
+              newvalue: 'норма'
             - value: '2'
-              newvalue: abnormal
+              newvalue: 'авария'
         - uuid: 'b489c9d56bcf4771baa18d23c0ac907c'
           name: 'NAG-MIB::sysFanStatus'
           mappings:
             - value: '0'
-              newvalue: normal
+              newvalue: 'норма'
             - value: '1'
-              newvalue: abnormal
+              newvalue: 'неисправен'
             - value: '2'
-              newvalue: error
+              newvalue: 'ошибка'
         - uuid: '34186304bea8407f82de93520b65b6f1'
           name: 'Service state'
           mappings:
             - value: '0'
-              newvalue: Down
+              newvalue: 'Недоступен'
             - value: '1'
-              newvalue: Up
+              newvalue: 'Доступен'
         - uuid: '01a272977ec04cc598cd9a6de63655c4'
           name: 'zabbix.host.available'
           mappings:
             - value: '0'
-              newvalue: 'not available'
+              newvalue: 'недоступен'
             - value: '1'
-              newvalue: available
+              newvalue: 'доступен'
             - value: '2'
-              newvalue: unknown
+              newvalue: 'неизвестно'
   triggers:
     - uuid: '19d43101814e4f9a8468b2628226b661'
       expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.power.ac)=2 or last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=2'
-      name: 'AC power lost, switch is running on battery'
-      opdata: 'AC: {ITEM.LASTVALUE1}, battery: {ITEM.LASTVALUE2}'
+      name: 'Пропало питание AC, коммутатор работает от батареи'
+      opdata: 'AC: {ITEM.LASTVALUE1}, батарея: {ITEM.LASTVALUE2}'
       priority: HIGH
-      description: 'Fires when AC power is abnormal (priACPowerStatus=2) or the battery is discharging (priBatteryStatus=2). Resolves when both are back to normal.'
+      description: 'Срабатывает, если питание AC в аварии (priACPowerStatus=2) или батарея разряжается (priBatteryStatus=2). Закрывается, когда оба параметра вернулись в норму.'
       tags:
         - tag: scope
           value: availability
     - uuid: '802f5808195545b59dc112d2a237ade4'
       expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.level)<{$UPS.BATTERY.LEVEL.MIN} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.battery.status)=2'
-      name: 'UPS battery level is low (<{$UPS.BATTERY.LEVEL.MIN}%)'
-      opdata: 'Level: {ITEM.LASTVALUE1}, status: {ITEM.LASTVALUE2}'
+      name: 'Низкий заряд батареи ИБП (<{$UPS.BATTERY.LEVEL.MIN}%)'
+      opdata: 'Заряд: {ITEM.LASTVALUE1}, статус: {ITEM.LASTVALUE2}'
       priority: HIGH
-      description: 'Fires only while the switch is running on battery (priBatteryStatus=2, discharging), so a low level during recharge after an outage does not alert.'
+      description: 'Срабатывает только при работе от батареи (priBatteryStatus=2, разряд), поэтому низкий заряд во время подзарядки после отключения питания не вызывает тревогу.'
       tags:
         - tag: scope
           value: availability
