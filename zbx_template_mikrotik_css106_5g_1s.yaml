@@ -1,0 +1,453 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: '36bff6c29af64692839d077febfc7079'
+      name: Templates/Network devices
+  templates:
+    - uuid: '3c13d34a828b44b99f2f8e45e1a24fa2'
+      template: 'MikroTik CSS106-5G-1S by SNMP'
+      name: 'MikroTik CSS106-5G-1S by SNMP'
+      description: |
+        Switch MikroTik CSS106-5G-1S (RB260GS), SwOS 2.x, SNMP v2c.
+        SwOS exposes only SNMPv2-MIB and IF-MIB (no MIKROTIK-MIB branch 1.3.6.1.4.1.14988: no temperature, voltage, PoE or SFP DDM over SNMP).
+        Ports: ifIndex 1-5 = Ethernet 1-5 (port 1 is PoE-in), ifIndex 6 = SFP. ifName = port name configured in SwOS, ifAlias is empty.
+        Monitors: availability, uptime/restart, firmware, interfaces (link, traffic, utilization, errors, discards, speed).
+      vendor:
+        name: MikroTik
+        version: 7.0-0
+      groups:
+        - name: Templates/Network devices
+      items:
+        - uuid: '4a68ee362c6949efb927297c97110ad4'
+          name: 'ICMP ping'
+          type: SIMPLE
+          key: icmpping
+          history: 7d
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: '2bff44df563e4cdca7664743133a3429'
+              expression: 'max(/MikroTik CSS106-5G-1S by SNMP/icmpping,#3)=0'
+              name: 'Нет ответа на ICMP ping'
+              priority: HIGH
+              description: 'Три последние попытки завершились таймаутом.'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: 'b9d17547484a46f09ee8e25bc6711811'
+          name: 'SNMP agent availability'
+          type: INTERNAL
+          key: 'zabbix[host,snmp,available]'
+          history: 7d
+          valuemap:
+            name: 'zabbix.host.available'
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: 'ba48c957213d43a4b639bceb459b7d64'
+              expression: 'max(/MikroTik CSS106-5G-1S by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
+              name: 'Нет данных по SNMP'
+              priority: WARNING
+              description: 'SNMP недоступен для опроса. Проверьте, что SNMP включён в SwOS (вкладка SNMP), community и разрешённый адрес (Allow From).'
+              dependencies:
+                - name: 'Нет ответа на ICMP ping'
+                  expression: 'max(/MikroTik CSS106-5G-1S by SNMP/icmpping,#3)=0'
+              tags:
+                - tag: scope
+                  value: availability
+        - uuid: '5e19b5e64082499c9eb3af8f4228f998'
+          name: 'System name'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.5.0
+          key: system.name
+          delay: 1h
+          history: 14d
+          value_type: CHAR
+          inventory_link: NAME
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+        - uuid: '249d8c7bd7bd4cdf9f54010023db33fd'
+          name: 'System description'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.1.0
+          key: system.descr
+          delay: 1h
+          history: 14d
+          value_type: CHAR
+          inventory_link: OS
+          description: 'Model and SwOS version, e.g. "CSS106-5G-1S SwOS v2.6".'
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: '52c34d00aec7477e9b9adec9d4e04707'
+              expression: 'last(/MikroTik CSS106-5G-1S by SNMP/system.descr,#1)<>last(/MikroTik CSS106-5G-1S by SNMP/system.descr,#2) and length(last(/MikroTik CSS106-5G-1S by SNMP/system.descr))>0'
+              name: 'Изменилась версия прошивки'
+              opdata: 'Сейчас: {ITEM.LASTVALUE1}'
+              priority: INFO
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+        - uuid: '212f96041b924ee9ba115237fef2645f'
+          name: 'System location'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.6.0
+          key: system.location
+          delay: 1h
+          history: 14d
+          value_type: CHAR
+          inventory_link: LOCATION
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 12h
+          tags:
+            - tag: component
+              value: system
+        - uuid: '33043ed80b894519b12f7490cd086373'
+          name: 'Uptime'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.2.1.1.3.0
+          key: system.uptime
+          value_type: FLOAT
+          units: uptime
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+          tags:
+            - tag: component
+              value: system
+          triggers:
+            - uuid: 'b518da9505c6472b9866b74477cb09b5'
+              expression: 'last(/MikroTik CSS106-5G-1S by SNMP/system.uptime)<10m'
+              name: 'Устройство перезагружено (uptime < 10 мин)'
+              priority: WARNING
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Нет данных по SNMP'
+                  expression: 'max(/MikroTik CSS106-5G-1S by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
+              tags:
+                - tag: scope
+                  value: notice
+      discovery_rules:
+        - uuid: 'eb76b62e85ac458a831498996621f05f'
+          name: 'Network interfaces discovery'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.2.1.31.1.1.1.1,1.3.6.1.2.1.2.2.1.3,1.3.6.1.2.1.2.2.1.7]'
+          key: net.if.discovery
+          delay: 1h
+          filter:
+            evaltype: AND
+            conditions:
+              - macro: '{#IFTYPE}'
+                value: '{$NET.IF.IFTYPE.MATCHES}'
+                formulaid: A
+              - macro: '{#IFADMINSTATUS}'
+                value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+                formulaid: B
+          description: 'IF-MIB interfaces. By default only ports enabled in SwOS (ifAdminStatus = up). {#SNMPINDEX} = port number (6 = SFP).'
+          item_prototypes:
+            - uuid: '33052dd7f79d4161a502d716214a180d'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Operational status'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.8.{#SNMPINDEX}'
+              key: 'net.if.status[ifOperStatus.{#SNMPINDEX}]'
+              history: 7d
+              trends: '0'
+              valuemap:
+                name: 'IF-MIB::ifOperStatus'
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'd6d18bd05f3045a6b01827cb0126b2bd'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Bits received'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.6.{#SNMPINDEX}'
+              key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'c46497f0e71f44de84bc24794f483f54'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Bits sent'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.10.{#SNMPINDEX}'
+              key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+              units: bps
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+                - type: MULTIPLIER
+                  parameters:
+                    - '8'
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '32b653e8affc4fdfb5ac0a8dd2f46e04'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Inbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.14.{#SNMPINDEX}'
+              key: 'net.if.in.errors[ifInErrors.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'ea6cb371d67b40819d9efba3d07e18b2'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Outbound packets with errors'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.20.{#SNMPINDEX}'
+              key: 'net.if.out.errors[ifOutErrors.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '30ce69ff17244d82a30580d520522339'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Inbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'net.if.in.discards[ifInDiscards.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: '736ae884cddb4d469e85a01ed0496685'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Outbound packets discarded'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.2.2.1.19.{#SNMPINDEX}'
+              key: 'net.if.out.discards[ifOutDiscards.{#SNMPINDEX}]'
+              value_type: FLOAT
+              preprocessing:
+                - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 'c79cc2bd88f14c78970e41ff0b7afa53'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Speed'
+              type: SNMP_AGENT
+              snmp_oid: '1.3.6.1.2.1.31.1.1.1.15.{#SNMPINDEX}'
+              key: 'net.if.speed[ifHighSpeed.{#SNMPINDEX}]'
+              delay: 5m
+              units: bps
+              description: 'Negotiated speed; 0 when the link is down.'
+              preprocessing:
+                - type: MULTIPLIER
+                  parameters:
+                    - '1000000'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              tags:
+                - tag: component
+                  value: network
+                - tag: interface
+                  value: '{#IFNAME}'
+          trigger_prototypes:
+            - uuid: '3d1a4c65f05d4fd29d6db62734e80dec'
+              expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              name: 'Порт {#SNMPINDEX} ({#IFNAME}): нет линка'
+              opdata: 'Текущее состояние: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              description: |
+                Порт был поднят и упал. Срабатывает только при смене состояния.
+                Отключить для порта: макрос {$IFCONTROL:"<ifName>"}=0.
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: availability
+            - uuid: 'bf2d733f48eb48b9ae0387c44e135ded'
+              expression: 'min(/MikroTik CSS106-5G-1S by SNMP/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"} or min(/MikroTik CSS106-5G-1S by SNMP/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'max(/MikroTik CSS106-5G-1S by SNMP/net.if.in.errors[ifInErrors.{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8 and max(/MikroTik CSS106-5G-1S by SNMP/net.if.out.errors[ifOutErrors.{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
+              name: 'Порт {#SNMPINDEX} ({#IFNAME}): высокий уровень ошибок'
+              opdata: 'Ошибок/с: вход {ITEM.LASTVALUE1}, выход {ITEM.LASTVALUE2}'
+              priority: WARNING
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Порт {#SNMPINDEX} ({#IFNAME}): нет линка'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+                  recovery_expression: 'last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: '5beb71099ea740a8893c4e34b8a2c2b6'
+              expression: '(avg(/MikroTik CSS106-5G-1S by SNMP/net.if.in[ifHCInOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or avg(/MikroTik CSS106-5G-1S by SNMP/net.if.out[ifHCOutOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/MikroTik CSS106-5G-1S by SNMP/net.if.in[ifHCInOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})<(({$IF.UTIL.MAX:"{#IFNAME}"}-5)/100)*last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/MikroTik CSS106-5G-1S by SNMP/net.if.out[ifHCOutOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})<(({$IF.UTIL.MAX:"{#IFNAME}"}-5)/100)*last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])'
+              name: 'Порт {#SNMPINDEX} ({#IFNAME}): высокая загрузка канала (>{$IF.UTIL.MAX:"{#IFNAME}"}%)'
+              event_name: 'Порт {#SNMPINDEX} ({#IFNAME}): высокая загрузка канала (>{$IF.UTIL.MAX:"{#IFNAME}"}% от {ITEM.LASTVALUE2})'
+              opdata: 'Вход: {ITEM.LASTVALUE1}, выход: {ITEM.LASTVALUE3}, скорость: {ITEM.LASTVALUE2}'
+              priority: WARNING
+              description: |
+                Средний входящий или исходящий трафик за {$IF.UTIL.TIME} превышает {$IF.UTIL.MAX:"{#IFNAME}"}% скорости порта.
+                Скорость берётся фактическая (IF-MIB::ifHighSpeed): порт на 100 Мбит/с считается от 100 Мбит/с.
+                Закрывается, когда оба направления ниже {$IF.UTIL.MAX:"{#IFNAME}"}-5%.
+                Порог для порта: {$IF.UTIL.MAX:"<ifName>"}.
+              dependencies:
+                - name: 'Порт {#SNMPINDEX} ({#IFNAME}): нет линка'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+                  recovery_expression: 'last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: '0c21d313adac48409971fde081ad303a'
+              expression: '{$IF.SPEED.CONTROL:"{#IFNAME}"}=1 and change(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])<0 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '(change(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2)>0) or last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 or {$IF.SPEED.CONTROL:"{#IFNAME}"}=0'
+              name: 'Порт {#SNMPINDEX} ({#IFNAME}): скорость порта снизилась'
+              opdata: 'Текущая скорость: {ITEM.LASTVALUE2}'
+              priority: INFO
+              description: |
+                Линк поднят, но согласовался на меньшей скорости (например, 1000 -> 100 Мбит/с): плохой кабель/коннектор, проблема автосогласования или более медленный SFP.
+                Закрывается, когда скорость вернулась, линк упал, или вручную.
+                Отключить для порта: макрос {$IF.SPEED.CONTROL:"<ifName>"}=0.
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Порт {#SNMPINDEX} ({#IFNAME}): нет линка'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+                  recovery_expression: 'last(/MikroTik CSS106-5G-1S by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              tags:
+                - tag: scope
+                  value: performance
+          graph_prototypes:
+            - uuid: 'a49e43d43f454a18bdfca8d11011c8fe'
+              name: 'Port {#SNMPINDEX} ({#IFNAME}): Network traffic'
+              graph_items:
+                - drawtype: GRADIENT_LINE
+                  color: 1A7C11
+                  item:
+                    host: 'MikroTik CSS106-5G-1S by SNMP'
+                    key: 'net.if.in[ifHCInOctets.{#SNMPINDEX}]'
+                - sortorder: '1'
+                  drawtype: BOLD_LINE
+                  color: 2774A4
+                  item:
+                    host: 'MikroTik CSS106-5G-1S by SNMP'
+                    key: 'net.if.out[ifHCOutOctets.{#SNMPINDEX}]'
+          preprocessing:
+            - type: SNMP_WALK_TO_JSON
+              parameters:
+                - '{#IFNAME}'
+                - 1.3.6.1.2.1.31.1.1.1.1
+                - '0'
+                - '{#IFTYPE}'
+                - 1.3.6.1.2.1.2.2.1.3
+                - '0'
+                - '{#IFADMINSTATUS}'
+                - 1.3.6.1.2.1.2.2.1.7
+                - '0'
+      tags:
+        - tag: class
+          value: network
+        - tag: target
+          value: mikrotik
+      macros:
+        - macro: '{$SNMP.TIMEOUT}'
+          value: 5m
+        - macro: '{$IFCONTROL}'
+          value: '1'
+          description: 'Link down trigger: 1 - enabled, 0 - disabled. Per port: {$IFCONTROL:"<ifName>"}.'
+        - macro: '{$IF.ERRORS.WARN}'
+          value: '2'
+          description: 'Errors per second threshold.'
+        - macro: '{$IF.UTIL.MAX}'
+          value: '90'
+          description: 'Link utilization threshold (% of negotiated speed). Per port: {$IF.UTIL.MAX:"<ifName>"}.'
+        - macro: '{$IF.UTIL.TIME}'
+          value: 15m
+          description: 'Averaging period for the link utilization trigger.'
+        - macro: '{$IF.SPEED.CONTROL}'
+          value: '1'
+          description: 'Lower speed trigger: 1 - enabled, 0 - disabled. Per port: {$IF.SPEED.CONTROL:"<ifName>"}.'
+        - macro: '{$NET.IF.IFTYPE.MATCHES}'
+          value: '^6$'
+          description: 'ifType filter. 6 = ethernetCsmacd.'
+        - macro: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+          value: '^1$'
+          description: 'Discover only ports enabled in SwOS. Set ^.* to discover all.'
+      valuemaps:
+        - uuid: '8f3d961cce2d4b81ada1bcbee5024f8d'
+          name: 'IF-MIB::ifOperStatus'
+          mappings:
+            - value: '1'
+              newvalue: up
+            - value: '2'
+              newvalue: down
+            - value: '3'
+              newvalue: 'тестирование'
+            - value: '4'
+              newvalue: 'неизвестно'
+            - value: '5'
+              newvalue: 'ожидание'
+            - value: '6'
+              newvalue: 'отсутствует'
+            - value: '7'
+              newvalue: 'нижний уровень недоступен'
+        - uuid: '1aa19cc085db4a519a709c615876a8d7'
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: 'Недоступен'
+            - value: '1'
+              newvalue: 'Доступен'
+        - uuid: '4719b81f008842ed814b62de6970629d'
+          name: 'zabbix.host.available'
+          mappings:
+            - value: '0'
+              newvalue: 'недоступен'
+            - value: '1'
+              newvalue: 'доступен'
+            - value: '2'
+              newvalue: 'неизвестно'
