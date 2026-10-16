@@ -554,6 +554,45 @@ zabbix_export:
               tags:
                 - tag: scope
                   value: performance
+            - uuid: 'e3da21eb63054940819b392e49211841'
+              expression: '(avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.in[ifHCInOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) or avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.out[ifHCOutOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])) and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.in[ifHCInOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})<(({$IF.UTIL.MAX:"{#IFNAME}"}-5)/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}]) and avg(/SNR-S5210G-24FX-UPS by SNMP/net.if.out[ifHCOutOctets.{#SNMPINDEX}],{$IF.UTIL.TIME})<(({$IF.UTIL.MAX:"{#IFNAME}"}-5)/100)*last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])'
+              name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage (>{$IF.UTIL.MAX:"{#IFNAME}"}%)'
+              event_name: 'Interface {#IFNAME}({#IFALIAS}): High bandwidth usage (>{$IF.UTIL.MAX:"{#IFNAME}"}% of {ITEM.LASTVALUE2})'
+              opdata: 'In: {ITEM.LASTVALUE1}, out: {ITEM.LASTVALUE3}, speed: {ITEM.LASTVALUE2}'
+              priority: WARNING
+              description: |
+                Average inbound or outbound traffic over {$IF.UTIL.TIME} exceeds {$IF.UTIL.MAX:"{#IFNAME}"}% of the link speed.
+                Link speed is the actual negotiated speed (IF-MIB::ifHighSpeed), so a 1G SFP in a 10G port is measured against 1 Gbps.
+                Resolves when both directions drop below {$IF.UTIL.MAX:"{#IFNAME}"}-5%.
+                Per port threshold: {$IF.UTIL.MAX:"<ifName>"}.
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+                  recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              tags:
+                - tag: scope
+                  value: performance
+            - uuid: 'b590f212fb844f9c9e889a9390fe87b1'
+              expression: '{$IF.SPEED.CONTROL:"{#IFNAME}"}=1 and change(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])<0 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: '(change(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}])>0 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.speed[ifHighSpeed.{#SNMPINDEX}],#2)>0) or last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 or {$IF.SPEED.CONTROL:"{#IFNAME}"}=0'
+              name: 'Interface {#IFNAME}({#IFALIAS}): Ethernet has changed to lower speed than it was before'
+              opdata: 'Current speed: {ITEM.LASTVALUE2}'
+              priority: INFO
+              description: |
+                The link stays up but negotiated at a lower speed (e.g. 1000 -> 100 Mbps): bad cable/connector, autonegotiation issue, or a slower SFP.
+                Resolves when the speed goes back up, the link goes down, or manually.
+                Disable for a port with macro {$IF.SPEED.CONTROL:"<ifName>"}=0.
+              manual_close: 'YES'
+              dependencies:
+                - name: 'Interface {#IFNAME}({#IFALIAS}): Link down'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])=2 and (last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}],#2))'
+                  recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/net.if.status[ifOperStatus.{#SNMPINDEX}])<>2 or {$IFCONTROL:"{#IFNAME}"}=0'
+              tags:
+                - tag: scope
+                  value: performance
           graph_prototypes:
             - uuid: '0759408bb7754421b6f5db5110c1f0d7'
               name: 'Interface {#IFNAME}({#IFALIAS}): Network traffic'
@@ -999,6 +1038,15 @@ zabbix_export:
         - macro: '{$IF.ERRORS.WARN}'
           value: '2'
           description: 'Errors per second threshold.'
+        - macro: '{$IF.UTIL.MAX}'
+          value: '90'
+          description: 'Link utilization threshold (% of negotiated speed). Per port: {$IF.UTIL.MAX:"<ifName>"}.'
+        - macro: '{$IF.UTIL.TIME}'
+          value: 15m
+          description: 'Averaging period for the link utilization trigger.'
+        - macro: '{$IF.SPEED.CONTROL}'
+          value: '1'
+          description: 'Lower speed trigger: 1 - enabled, 0 - disabled. Per port: {$IF.SPEED.CONTROL:"<ifName>"}.'
         - macro: '{$NET.IF.IFTYPE.MATCHES}'
           value: '^6$'
           description: 'ifType filter. 6 = ethernetCsmacd.'
