@@ -382,12 +382,12 @@ zabbix_export:
         - uuid: 'd275eff1c65f4b8fa1f528fdd6ff9457'
           name: 'SFP DDM: Get table'
           type: SNMP_AGENT
-          snmp_oid: 'walk[1.3.6.1.4.1.40418.7.100.30.1.1,1.3.6.1.4.1.40418.7.100.30.3.1,1.3.6.1.2.1.2.2.1.7]'
+          snmp_oid: 'walk[1.3.6.1.4.1.40418.7.100.30.1.1,1.3.6.1.4.1.40418.7.100.30.3.1,1.3.6.1.2.1.2.2.1.7,1.3.6.1.2.1.31.1.1.1.18]'
           key: snr.ddm.walk
           delay: 5m
           history: '0'
           value_type: TEXT
-          description: 'Master item: NAG-MIB::ddmTranscDiagnosisTable + ddmTranscBasicInfoTable + IF-MIB::ifAdminStatus (DDM index = ifIndex).'
+          description: 'Master item: NAG-MIB::ddmTranscDiagnosisTable + ddmTranscBasicInfoTable + IF-MIB::ifAdminStatus + IF-MIB::ifAlias (DDM index = ifIndex).'
           tags:
             - tag: component
               value: raw
@@ -654,7 +654,7 @@ zabbix_export:
           description: 'NAG-MIB::ddmTranscDiagnosisTable. Only ports with an inserted transceiver that reports DDM ("NULL" = empty slot or no DDM). Index = ifIndex (5001+ on this platform), port name is taken from ddmTransSerialName.'
           item_prototypes:
             - uuid: 'a31ebcff25884e97adcc13d40126fe89'
-              name: 'SFP {#PORTNAME}: Port admin status'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): Port admin status'
               type: DEPENDENT
               key: 'snr.ddm.admin[{#SNMPINDEX}]'
               history: 7d
@@ -678,7 +678,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '11546e8f142a44daa4d8357d8ae027d6'
-              name: 'SFP {#PORTNAME}: temperature'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): temperature'
               type: DEPENDENT
               key: 'snr.ddm.temp[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -701,7 +701,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: 'f7bd94a4367842119f31639007f373b5'
-              name: 'SFP {#PORTNAME}: temperature high alarm threshold'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): temperature high alarm threshold'
               type: DEPENDENT
               key: 'snr.ddm.temp.high.alarm[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -727,7 +727,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '1679ad642baf49ab8fc4e8caa4688a41'
-              name: 'SFP {#PORTNAME}: voltage'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): voltage'
               type: DEPENDENT
               key: 'snr.ddm.voltage[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -750,7 +750,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: 'b804194c83be4c7faa46e049c689531e'
-              name: 'SFP {#PORTNAME}: bias current'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): bias current'
               type: DEPENDENT
               key: 'snr.ddm.bias[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -773,7 +773,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '24c58ae749da45348415f4c681a1326d'
-              name: 'SFP {#PORTNAME}: RX power'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): RX power'
               type: DEPENDENT
               key: 'snr.ddm.rx[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -800,7 +800,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '6380bcba96924380b45e4d5a9ed2cc18'
-              name: 'SFP {#PORTNAME}: RX power high alarm threshold'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): RX power high alarm threshold'
               type: DEPENDENT
               key: 'snr.ddm.rx.high.alarm[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -826,7 +826,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '7fcba1ed286e4d9185baa8aec243b5af'
-              name: 'SFP {#PORTNAME}: RX power low alarm threshold'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): RX power low alarm threshold'
               type: DEPENDENT
               key: 'snr.ddm.rx.low.alarm[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -852,7 +852,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '33bfd56c47b644ccb222ac457e1d4823'
-              name: 'SFP {#PORTNAME}: RX power low warning threshold'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): RX power low warning threshold'
               type: DEPENDENT
               key: 'snr.ddm.rx.low.warn[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -878,7 +878,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: 'eec5d20aea3940d28700d7156f35cf15'
-              name: 'SFP {#PORTNAME}: TX power'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): TX power'
               type: DEPENDENT
               key: 'snr.ddm.tx[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -903,7 +903,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '819bb88111b3417d95992cc32c9befc8'
-              name: 'SFP {#PORTNAME}: TX power low alarm threshold'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): TX power low alarm threshold'
               type: DEPENDENT
               key: 'snr.ddm.tx.low.alarm[{#SNMPINDEX}]'
               value_type: FLOAT
@@ -929,7 +929,7 @@ zabbix_export:
                 - tag: port
                   value: '{#PORTNAME}'
             - uuid: '22e724703ece4ebd9bf3f6240c0162a1'
-              name: 'SFP {#PORTNAME}: Serial number'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): Serial number'
               type: DEPENDENT
               key: 'snr.ddm.serial[{#SNMPINDEX}]'
               history: 30d
@@ -953,7 +953,7 @@ zabbix_export:
               trigger_prototypes:
                 - uuid: 'f6a00725cc334ea09ed16ab996d71698'
                   expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}],#1)<>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}],#2) and length(last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.serial[{#SNMPINDEX}]))>0'
-                  name: 'SFP {#PORTNAME}: трансивер заменён'
+                  name: 'SFP {#PORTNAME}({#IFALIAS}): трансивер заменён'
                   opdata: 'Серийный номер: {ITEM.LASTVALUE1}'
                   priority: INFO
                   manual_close: 'YES'
@@ -963,7 +963,7 @@ zabbix_export:
           trigger_prototypes:
             - uuid: '4b0bc732ed1e4eab87782a84b91b2a46'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.alarm[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: уровень RX ниже аварийного порога'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): уровень RX ниже аварийного порога'
               opdata: 'RX: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: AVERAGE
               description: 'Включая потерю сигнала ("-" = {$DDM.NO.SIGNAL} dBm).'
@@ -972,18 +972,18 @@ zabbix_export:
                   value: availability
             - uuid: '6d9d8d297b6e4b4d87ee9c2f0c75c1de'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.warn[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: уровень RX ниже порога предупреждения'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): уровень RX ниже порога предупреждения'
               opdata: 'RX: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: WARNING
               dependencies:
-                - name: 'SFP {#PORTNAME}: уровень RX ниже аварийного порога'
+                - name: 'SFP {#PORTNAME}({#IFALIAS}): уровень RX ниже аварийного порога'
                   expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.low.alarm[{#SNMPINDEX}])-{$DDM.RX.LOW.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
               tags:
                 - tag: scope
                   value: performance
             - uuid: '5b236691b2f94be2b4a62e2663ba5591'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.rx.high.alarm[{#SNMPINDEX}])+{$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: уровень RX выше аварийного порога'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): уровень RX выше аварийного порога'
               opdata: 'RX: {ITEM.LASTVALUE1}, порог модуля: {ITEM.LASTVALUE2}, поправка: {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} dB'
               priority: WARNING
               description: 'Порог = верхний аварийный порог модуля + {$DDM.RX.HIGH.OFFSET:"{#PORTNAME}"} (dB). Чтобы ослабить порог для одного порта, задайте макрос на узле, например DDM.RX.HIGH.OFFSET с контекстом ge16 = 5.'
@@ -992,7 +992,7 @@ zabbix_export:
                   value: performance
             - uuid: 'df8238a710c9495e89cea474deb62ed7'
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.tx[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.tx.low.alarm[{#SNMPINDEX}]) and last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.admin[{#SNMPINDEX}])=1'
-              name: 'SFP {#PORTNAME}: уровень TX ниже аварийного порога'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): уровень TX ниже аварийного порога'
               opdata: 'TX: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: AVERAGE
               tags:
@@ -1002,7 +1002,7 @@ zabbix_export:
               expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])>last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp[{#SNMPINDEX}])<last(/SNR-S5210G-24FX-UPS by SNMP/snr.ddm.temp.high.alarm[{#SNMPINDEX}])-3'
-              name: 'SFP {#PORTNAME}: температура выше аварийного порога'
+              name: 'SFP {#PORTNAME}({#IFALIAS}): температура выше аварийного порога'
               opdata: 'Температура: {ITEM.LASTVALUE1}, порог: {ITEM.LASTVALUE2}'
               priority: WARNING
               tags:
@@ -1030,6 +1030,9 @@ zabbix_export:
                 - '0'
                 - '{#SFP.WAVELENGTH}'
                 - 1.3.6.1.4.1.40418.7.100.30.3.1.8
+                - '0'
+                - '{#IFALIAS}'
+                - 1.3.6.1.2.1.31.1.1.1.18
                 - '0'
       tags:
         - tag: class
