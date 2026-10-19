@@ -11,7 +11,8 @@ zabbix_export:
         Ping-only monitoring for devices without SNMP/agent (cameras, ATMs, printers, CPE, etc.).
         The alert says where the device is connected. Set on each host:
           {$UPLINK.DEVICE} - switch/router the device is connected to (e.g. sw-access-98 or "Жуковского главный");
-          {$UPLINK.PORT}   - port on that switch (e.g. ge10).
+          {$UPLINK.PORT}   - port on that switch (e.g. ge10);
+          {$UPLINK.VLAN}   - VLAN ID of the device (e.g. 100).
         The host needs any interface (e.g. Agent) with the device IP: simple checks ping the host's default interface.
       vendor:
         name: Custom
@@ -32,12 +33,12 @@ zabbix_export:
           triggers:
             - uuid: '88f3cba3300d46f6ad4e5d070563f5c1'
               expression: 'max(/ICMP Ping with uplink/icmpping,#3)=0'
-              name: 'Нет ответа на ping: {HOST.NAME} ({HOST.IP}), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}'
-              opdata: 'Коммутатор: {$UPLINK.DEVICE}, порт: {$UPLINK.PORT}'
+              name: 'Нет ответа на ping: {HOST.NAME} ({HOST.IP}), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}'
+              opdata: 'Коммутатор: {$UPLINK.DEVICE}, порт: {$UPLINK.PORT}, VLAN: {$UPLINK.VLAN}'
               priority: HIGH
               description: |
                 Три последние попытки ping завершились таймаутом.
-                Устройство подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}. Проверьте линк и PoE на этом порту.
+                Устройство подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}. Проверьте линк, PoE и VLAN на этом порту.
               tags:
                 - tag: scope
                   value: availability
@@ -45,6 +46,8 @@ zabbix_export:
                   value: '{$UPLINK.DEVICE}'
                 - tag: uplink_port
                   value: '{$UPLINK.PORT}'
+                - tag: uplink_vlan
+                  value: '{$UPLINK.VLAN}'
         - uuid: '2062cf36f5af47d98af9b95b52d8fa12'
           name: 'ICMP loss'
           type: SIMPLE
@@ -58,11 +61,11 @@ zabbix_export:
           triggers:
             - uuid: '1ffa9cc4ead441d7b464a5f6339467d8'
               expression: 'min(/ICMP Ping with uplink/icmppingloss,5m)>{$ICMP_LOSS_WARN} and min(/ICMP Ping with uplink/icmppingloss,5m)<100'
-              name: 'Потери пакетов до {HOST.NAME} (>{$ICMP_LOSS_WARN}%), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}'
+              name: 'Потери пакетов до {HOST.NAME} (>{$ICMP_LOSS_WARN}%), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}'
               opdata: 'Потери: {ITEM.LASTVALUE1}'
               priority: WARNING
               dependencies:
-                - name: 'Нет ответа на ping: {HOST.NAME} ({HOST.IP}), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}'
+                - name: 'Нет ответа на ping: {HOST.NAME} ({HOST.IP}), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}'
                   expression: 'max(/ICMP Ping with uplink/icmpping,#3)=0'
               tags:
                 - tag: scope
@@ -71,6 +74,8 @@ zabbix_export:
                   value: '{$UPLINK.DEVICE}'
                 - tag: uplink_port
                   value: '{$UPLINK.PORT}'
+                - tag: uplink_vlan
+                  value: '{$UPLINK.VLAN}'
         - uuid: '2de122fa604b468ca59d5ccfbbcd0338'
           name: 'ICMP response time'
           type: SIMPLE
@@ -84,13 +89,13 @@ zabbix_export:
           triggers:
             - uuid: '71eabcd7e74e4000a5b8cd4a8f1d1665'
               expression: 'avg(/ICMP Ping with uplink/icmppingsec,5m)>{$ICMP_RESPONSE_TIME_WARN}'
-              name: 'Большое время ответа {HOST.NAME} (>{$ICMP_RESPONSE_TIME_WARN} с), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}'
+              name: 'Большое время ответа {HOST.NAME} (>{$ICMP_RESPONSE_TIME_WARN} с), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}'
               opdata: 'Время ответа: {ITEM.LASTVALUE1}'
               priority: WARNING
               dependencies:
-                - name: 'Нет ответа на ping: {HOST.NAME} ({HOST.IP}), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}'
+                - name: 'Нет ответа на ping: {HOST.NAME} ({HOST.IP}), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}'
                   expression: 'max(/ICMP Ping with uplink/icmpping,#3)=0'
-                - name: 'Потери пакетов до {HOST.NAME} (>{$ICMP_LOSS_WARN}%), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}'
+                - name: 'Потери пакетов до {HOST.NAME} (>{$ICMP_LOSS_WARN}%), подключено к {$UPLINK.DEVICE}, порт {$UPLINK.PORT}, VLAN {$UPLINK.VLAN}'
                   expression: 'min(/ICMP Ping with uplink/icmppingloss,5m)>{$ICMP_LOSS_WARN} and min(/ICMP Ping with uplink/icmppingloss,5m)<100'
               tags:
                 - tag: scope
@@ -99,6 +104,8 @@ zabbix_export:
                   value: '{$UPLINK.DEVICE}'
                 - tag: uplink_port
                   value: '{$UPLINK.PORT}'
+                - tag: uplink_vlan
+                  value: '{$UPLINK.VLAN}'
       tags:
         - tag: class
           value: network
@@ -111,6 +118,9 @@ zabbix_export:
         - macro: '{$UPLINK.PORT}'
           value: 'не указан'
           description: 'Port on the uplink switch. Set on the host.'
+        - macro: '{$UPLINK.VLAN}'
+          value: 'не указан'
+          description: 'VLAN ID of the device. Set on the host.'
         - macro: '{$ICMP_LOSS_WARN}'
           value: '20'
           description: 'Packet loss (%) for the warning trigger.'
